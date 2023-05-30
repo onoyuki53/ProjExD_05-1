@@ -540,7 +540,6 @@ def game():
     bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
     high_score = High_Score()
-    ## add char_life
     if difficulty < 5:
         char_life = CharLife(difficulty)
     else:
@@ -621,7 +620,6 @@ def game():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             expe.exp_up(3)  # 経験値3獲得
             if difficulty < 5:  # モードによる設定
-                score.score_up(10 * difficulty)  # 難易度による点数アップ
                 score.score_up(10 * difficulty)  # 難易度による点数アップ
                 if score.score >= high_score.high_score:
                     high_score.high_score = score.score
@@ -713,6 +711,7 @@ def game():
                 # モードによる設定
                 if difficulty < 5:
                     score.score_up(1 * difficulty)  # 難易度による点数アップ
+
                     if score.score >= high_score.high_score:
                         high_score.high_score = score.score
                     else:
@@ -723,11 +722,13 @@ def game():
                         high_score.high_score = score.score
                     else:
                         high_score.high_score = high_score.high_score
+                        
             else:  # normalモードの時
                 bird.change_img(8, screen)  # こうかとん悲しみエフェクト
                 font = pg.font.Font(None, 100)
                 text = font.render("Game Over!!", 1, (0, 0, 0))  # Game Over!!メッセージ表示
                 high_score.update(screen)
+                score.update(screen)
                 screen.blit(text, (600, 350))
                 score.update(screen)
                 high_score.update(screen)
@@ -789,6 +790,7 @@ def main():
     font = pg.font.Font(None, 100)
     title = font.render("Fight!! Kokaton", 1, (0, 0, 0))
     high_score = High_Score()
+
     while True:
         pg.display.set_caption("真！こうかとん無双")
         screen = pg.display.set_mode((WIDTH, HEIGHT))
