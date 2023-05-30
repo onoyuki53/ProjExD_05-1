@@ -2,17 +2,19 @@ import math
 import random
 import sys
 import time
+from os import path
 
 import pygame as pg
 
 
-WIDTH = 1600  # ゲームウィンドウの幅
-HEIGHT = 900  # ゲームウィンドウの高さ
+WIDTH = 1500  # ゲームウィンドウの幅
+HEIGHT = 700  # ゲームウィンドウの高さ
 difficulty = 0  # ゲーム難易度
 pause = False  # ゲーム一時停止
 stop = False  # ゲーム終了
 objects = []  # ボタンリスト
 
+savefile = "highscore.txt" #点数を保存するファイルを設定（txt）
 
 class Button():
     """
@@ -31,7 +33,7 @@ class Button():
         objects.append(self)
 
     def update(self, screen: pg.Surface):
-        mouse = pg.mouse.get_pos()  # マウスのイベント      
+        mouse = pg.mouse.get_pos()  # マウスのイベント
         self.button_img.fill((255, 255, 255))
         if self.button_rct.collidepoint(mouse):
             self.button_img.fill((0, 102, 204))
@@ -51,6 +53,7 @@ class Button():
 def set_difficulty_simple():
     global difficulty
     difficulty = 1
+    return
 
 def set_difficulty_normal():
     global difficulty
@@ -63,7 +66,7 @@ def set_difficulty_hard():
 def set_difficulty_adventure():
     global difficulty
     difficulty = 6
-    
+
 # ゲーム終了
 def set_quit():
     global stop
@@ -218,7 +221,7 @@ class Bomb(pg.sprite.Sprite):
         self.vx, self.vy = calc_orientation(emy.rect, bird.rect)
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery + emy.rect.height / 2
-        if difficulty < 5:  # モードによる設定 
+        if difficulty < 5:  # モードによる設定
             self.speed = 6*difficulty  # 難易度によるスピード設定
         else:
             self.speed = 10
@@ -368,7 +371,8 @@ class Score:
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
         self.score = 0
-        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        self.text = "Score"
+        self.image = self.font.render(f"{self.text}: {self.score}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT - 50
 
@@ -376,7 +380,7 @@ class Score:
         self.score += add
 
     def update(self, screen: pg.Surface):
-        self.image = self.font.render(f"Score: {self.score}", 0, self.color)
+        self.image = self.font.render(f"{self.text}: {self.score}", 0, self.color)
         screen.blit(self.image, self.rect)
 
 
@@ -503,6 +507,7 @@ def game():
                 score.score_up(1*difficulty)  # 難易度による点数アップ
             else:
                 score.score_up(1*(len(bombs)+1))  # 爆弾数による点数アップ
+            
 
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
@@ -533,11 +538,30 @@ def game():
                     score.score_up(1*(len(bombs)+1))  # 爆弾数による点数アップ
             else: #normalモードの時
                 bird.change_img(8, screen) # こうかとん悲しみエフェクト
+
+              # 過去のハイスコアを読み込む
+                high_score = Score() # ハイスコア用にインスタンス化
+                high_score.color = (0, 128, 0)
+                high_score.text = "High Score" # 表示するテキストの一部
+                high_score.image = high_score.font.render(f"{high_score.text}: {high_score.score}", True, high_score.color)
+                high_score.rect.center = 110, 100 # 画面左上を0,0として、文字列の中心位置
+
+                dir_test = "ex05" # ハイスコアファイルがあるフォルダ名（パス）
+                with open(path.join(dir_test, savefile), 'r') as f:
+                    high_score.score = int(f.read())
+                
+                #　ハイスコア更新
+                if score.score > high_score.score:
+                    high_score.score = score.score # ゲームオーバーの時のスコア
+                    with open(path.join(dir_test, savefile), 'w') as f:
+                        f.write(str(high_score.score))
+                
+                
                 font = pg.font.Font(None, 100)
                 text = font.render("Game Over!!", 1, (0, 0, 0)) # Game Over!!メッセージ表示
+                high_score.update(screen) # ハイスコアを表示
                 score.update(screen)
                 screen.blit(text, (600, 350))
-                score.update(screen)
                 pg.display.update()
                 time.sleep(2)
                 return
@@ -565,7 +589,7 @@ def game():
 
         shields.update()
         shields.draw(screen)
-
+        
         score.update(screen)
         pg.display.update()
         tmr += 1
@@ -582,10 +606,13 @@ def main():
     menu_kokaton_2 = pg.transform.flip(sub_kokaton, True, False)
     font = pg.font.Font(None, 100)
     title = font.render("Fight!! Kokaton", 1, (0, 0, 0))
+    pg.display.set_caption("真！こうかとん無双")
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
+
+    
 
     while True: 
-        pg.display.set_caption("真！こうかとん無双")
-        screen = pg.display.set_mode((WIDTH, HEIGHT))
+        
         clock  = pg.time.Clock()
         screen.fill((117, 200, 236))
         for event in pg.event.get():
@@ -606,7 +633,6 @@ def main():
         button_quit = Button(600, 700, 400, 100, 'Quit', set_quit)
         for object in objects:
             object.update(screen)
-
 
         # ゲーム難易度を選択ボタンを押したら、ゲームスタート
         if difficulty >= 1:
