@@ -10,6 +10,8 @@ HEIGHT = 900  # ゲームウィンドウの高さ
 difficulty = 0  # ゲーム難易度
 stop = False  # ゲーム終了
 objects = []  # ボタンリスト
+high_score = 0
+a = 0
 
 
 def SE_load(filename):
@@ -412,6 +414,27 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class High_Score:
+    """
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    爆弾:1点
+    敵機:10点
+    """
+    def __init__(self):
+        global high_score
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.high_score = 0
+        self.image = self.font.render(f"High Score: {self.high_score}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT - 500
+    def score_up(self, add):
+        self.high_score += add
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"High Score: {self.high_score}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
 class Shield(pg.sprite.Sprite):
     """
     防御壁に関するクラス
@@ -510,11 +533,13 @@ class Level:
 
 
 def game():
+    global high_score
+    global a
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
-    ## add char_life
+    high_score = High_Score()
     if difficulty < 5:
         char_life = CharLife(difficulty)
     else:
@@ -538,6 +563,7 @@ def game():
 
     tmr = 0
     clock = pg.time.Clock()
+    high_score.high_score = a
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
@@ -595,8 +621,16 @@ def game():
             expe.exp_up(3)  # 経験値3獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(10 * difficulty)  # 難易度による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
             else:
                 score.score_up(10 * (len(emys) + 1))  # 敵数による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
@@ -604,8 +638,16 @@ def game():
             expe.exp_up(1)  # 経験値1獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(1 * difficulty)  # 難易度による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
             else:
                 score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             if bird.state == "hyper":
@@ -638,8 +680,11 @@ def game():
             font2 = pg.font.SysFont("hg正楷書体pro", 50)  # 第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
             text1 = font1.render("GameOver", True, (255, 0, 0))
             text2 = font2.render(f"得点は{score.score}点でした", True, (255, 0, 0))
-            screen.blit(text1, (450, 300))  # GameOverと450,300の位置に配置
-            screen.blit(text2, (625, 450))  # scoreを625,450の位置に配置
+            text3 = font2.render(f"得点は{high_score.high_score}点でした", True, (255,0,0))
+            screen.blit(text1, (450,300)) #GameOverと450,300の位置に配置
+            screen.blit(text2, (625,450)) #scoreを625,450の位置に配置
+            screen.blit(text3, (800,600))
+            a = high_score.high_score
 
             pg.display.update()
             time.sleep(2)
@@ -649,8 +694,16 @@ def game():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             if difficulty < 5:  # モードによる設定
                 score.score_up(1 * difficulty)  # 難易度による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
             else:
                 score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
             if bird.state == "hyper":  # hyperモードの時
@@ -658,15 +711,27 @@ def game():
                 # モードによる設定
                 if difficulty < 5:
                     score.score_up(1 * difficulty)  # 難易度による点数アップ
+
+                    if score.score >= high_score.high_score:
+                        high_score.high_score = score.score
+                    else:
+                        high_score.high_score = high_score.high_score
                 else:
                     score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
+                    if score.score >= high_score.high_score:
+                        high_score.high_score = score.score
+                    else:
+                        high_score.high_score = high_score.high_score
+                        
             else:  # normalモードの時
                 bird.change_img(8, screen)  # こうかとん悲しみエフェクト
                 font = pg.font.Font(None, 100)
                 text = font.render("Game Over!!", 1, (0, 0, 0))  # Game Over!!メッセージ表示
+                high_score.update(screen)
                 score.update(screen)
                 screen.blit(text, (600, 350))
                 score.update(screen)
+                high_score.update(screen)
                 pg.display.update()
                 time.sleep(2)
                 return
@@ -675,8 +740,16 @@ def game():
             exps.add(Explosion(bomb, 50))
             if difficulty < 5:  # モードによる設定
                 score.score_up(1 * difficulty)  # 難易度による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
             else:
                 score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
+                if score.score >= high_score.high_score:
+                    high_score.high_score = score.score
+                else:
+                    high_score.high_score = high_score.high_score
 
         bird.update(key_lst, screen)
         beams.update()
@@ -698,6 +771,7 @@ def game():
         char_life.update(screen)
 
         score.update(screen)
+        high_score.update(screen)
         expe.update(screen)
         pg.display.update()
         tmr += 1
@@ -705,6 +779,7 @@ def game():
 
 
 def main():
+    global high_score
     global stop
     global difficulty
 
@@ -714,18 +789,20 @@ def main():
     menu_kokaton_2 = pg.transform.flip(sub_kokaton, True, False)
     font = pg.font.Font(None, 100)
     title = font.render("Fight!! Kokaton", 1, (0, 0, 0))
+    high_score = High_Score()
 
     while True:
         pg.display.set_caption("真！こうかとん無双")
         screen = pg.display.set_mode((WIDTH, HEIGHT))
         clock = pg.time.Clock()
-        screen.fill((117, 200, 236))
+        screen.fill((117, 200, 236)) 
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
         # メニュー
         screen.blit(title, (535, 60))
+        high_score.update(screen)
         pg.draw.rect(screen, (255, 255, 255), (600, 250, 400, 550))
         pg.draw.rect(screen, (0, 102, 204), (592, 242, 416, 566), 8)
         screen.blit(menu_kokaton_1, [1150, 665])
