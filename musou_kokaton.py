@@ -18,16 +18,15 @@ def SE_load(filename):
     beam,explosion,gameover
     のいずれかを与えると効果音を再生する関数
     """
-    if filename=="beam":
+    if filename == "beam":
         pg.mixer.music.load("ex05/se/beam.wav")
-        pg.mixer.music.play() 
+        pg.mixer.music.play()
     if filename == "explosion":
         pg.mixer.music.load("ex05/se/explosion.wav")
-        pg.mixer.music.play() 
+        pg.mixer.music.play()
     if filename == "gameover":
         pg.mixer.music.load("ex05/se/gameover.wav")
-        pg.mixer.music.play() 
-
+        pg.mixer.music.play()
 
 
 class Button:
@@ -280,8 +279,6 @@ class Beam(pg.sprite.Sprite):
         self.speed = 10
         SE_load("beam")
 
-        
-
     def update(self):
         """
         ビームを速度ベクトルself.vx, self.vyに基づき移動させる
@@ -310,7 +307,6 @@ class Explosion(pg.sprite.Sprite):
         self.rect = self.image.get_rect(center=obj.rect.center)
         self.life = life
         SE_load("explosion")
-
 
     def update(self):
         """
@@ -447,10 +443,46 @@ class Shield(pg.sprite.Sprite):
             self.kill()
 
 
+class CharLife:
+    """
+    キャラクター(こうかとん)の残機数に関するクラス
+    """
+
+    # LEVEL = {
+    #     "初級": 3,
+    #     "中級": 2,
+    #     "上級": 1,
+    # }
+
+    def __init__(self, level: str):
+        """
+        ライフを作成する
+        args1:ゲームの難易度
+        """
+        # フォント設定
+        self.font = pg.font.Font("./ex05/fonts/SourceHanSans-VF.ttf", 40)
+        self.color = (0, 0, 255)  # 色設定
+        self.level = difficulty  # オブジェクトLEVELに応じた数字(life)
+        self.life = "★" * self.level  # self.levelの数だけ★を作成
+        self.image = self.font.render(f"残機:{self.life}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, 100
+
+    def life_kill(self):
+        self.level -= 1
+        self.life = "★" * self.level
+        print(self.life, self.level)
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"残機:{self.life}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
 class Level:
     """
     ゲームのレベルに関するクラス
     """
+
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 0)
@@ -458,23 +490,23 @@ class Level:
         self.lim = 10
         self.level = 1
         self.image = self.font.render(f"Level: {self.level}", 0, self.color)
-        
-    def exp_up(self, add:int):
+
+    def exp_up(self, add: int):
         """
         経験値,レベルの計算を行う
         """
         self.exp += add
-        if self.exp >= self.lim: #経験値上限self.limを累積経験値self.expが超えたら
-            self.level += 1      #レベルが一つ上がる
+        if self.exp >= self.lim:  # 経験値上限self.limを累積経験値self.expが超えたら
+            self.level += 1  # レベルが一つ上がる
             self.exp -= self.lim
             self.lim += random.randint(1, 5)
 
-    def update(self, screen:pg.surface):
+    def update(self, screen: pg.surface):
         """
         レベルの表示の更新を行う
         """
         self.image = self.font.render(f"Level: {self.level}", 0, self.color)
-        screen.blit(self.image, (250, 100)) 
+        screen.blit(self.image, (250, 100))
 
 
 def game():
@@ -482,6 +514,11 @@ def game():
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
+    ## add char_life
+    if difficulty < 5:
+        char_life = CharLife(difficulty)
+    else:
+        char_life = CharLife(1)
     expe = Level()
 
     bird = Bird(3, (900, 400))
@@ -496,9 +533,8 @@ def game():
 
     shields = pg.sprite.Group()
 
-    bgm=pg.mixer.Sound("ex05/se/bgm.wav")
-    bgm.play() 
-
+    bgm = pg.mixer.Sound("ex05/se/bgm.wav")
+    bgm.play()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -556,7 +592,7 @@ def game():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
-            expe.exp_up(3) #経験値3獲得
+            expe.exp_up(3)  # 経験値3獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(10 * difficulty)  # 難易度による点数アップ
             else:
@@ -565,19 +601,27 @@ def game():
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-            expe.exp_up(1) #経験値1獲得
+            expe.exp_up(1)  # 経験値1獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(1 * difficulty)  # 難易度による点数アップ
             else:
                 score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
-            bird.change_img(8, screen) # こうかとん悲しみエフェクト
+            if bird.state == "hyper":
+                score.score_up(1 * difficulty)  # 1点アップ
+                continue
+            if char_life.level > 1:
+                char_life.life_kill()
+                continue
+            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             """
             BGMを停止＆GameOverの効果音再生
             """
-            SE_load("gameover")#SE_load関数で第一引数に何の効果音か(beam,explosion,gameover)を与えてあげると効果音が流れる
-            bgm.stop() #GameOverになったらBGMを停止する
+            SE_load(
+                "gameover"
+            )  # SE_load関数で第一引数に何の効果音か(beam,explosion,gameover)を与えてあげると効果音が流れる
+            bgm.stop()  # GameOverになったらBGMを停止する
             """
             半透明な黒いrectを表示
             """
@@ -588,12 +632,14 @@ def game():
             """
             GameOver等の文字の表示
             """
-            font1 = pg.font.SysFont("hg正楷書体pro", 150)#第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
-            font2 = pg.font.SysFont("hg正楷書体pro", 50)#第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
-            text1 = font1.render("GameOver", True, (255,0,0))
-            text2 = font2.render(f"得点は{score.score}点でした", True, (255,0,0))
-            screen.blit(text1, (450,300)) #GameOverと450,300の位置に配置
-            screen.blit(text2, (625,450)) #scoreを625,450の位置に配置
+            font1 = pg.font.SysFont(
+                "hg正楷書体pro", 150
+            )  # 第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
+            font2 = pg.font.SysFont("hg正楷書体pro", 50)  # 第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
+            text1 = font1.render("GameOver", True, (255, 0, 0))
+            text2 = font2.render(f"得点は{score.score}点でした", True, (255, 0, 0))
+            screen.blit(text1, (450, 300))  # GameOverと450,300の位置に配置
+            screen.blit(text2, (625, 450))  # scoreを625,450の位置に配置
 
             pg.display.update()
             time.sleep(2)
@@ -609,7 +655,8 @@ def game():
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
             if bird.state == "hyper":  # hyperモードの時
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-                if difficulty < 5:  # モードによる設定
+                # モードによる設定
+                if difficulty < 5:
                     score.score_up(1 * difficulty)  # 難易度による点数アップ
                 else:
                     score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
@@ -646,6 +693,9 @@ def game():
 
         shields.update()
         shields.draw(screen)
+
+        ##add char_life
+        char_life.update(screen)
 
         score.update(screen)
         expe.update(screen)
