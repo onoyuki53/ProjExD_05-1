@@ -8,9 +8,25 @@ import pygame as pg
 WIDTH = 1600  # ゲームウィンドウの幅
 HEIGHT = 900  # ゲームウィンドウの高さ
 difficulty = 0  # ゲーム難易度
-pause = False  # ゲーム一時停止
 stop = False  # ゲーム終了
 objects = []  # ボタンリスト
+
+
+def SE_load(filename):
+    """
+    第一引数に
+    beam,explosion,gameover
+    のいずれかを与えると効果音を再生する関数
+    """
+    if filename == "beam":
+        pg.mixer.music.load("ex05/se/beam.wav")
+        pg.mixer.music.play()
+    if filename == "explosion":
+        pg.mixer.music.load("ex05/se/explosion.wav")
+        pg.mixer.music.play()
+    if filename == "gameover":
+        pg.mixer.music.load("ex05/se/gameover.wav")
+        pg.mixer.music.play()
 
 
 class Button:
@@ -261,6 +277,7 @@ class Beam(pg.sprite.Sprite):
         self.rect.centery = bird.rect.centery + bird.rect.height * self.vy
         self.rect.centerx = bird.rect.centerx + bird.rect.width * self.vx
         self.speed = 10
+        SE_load("beam")
 
     def update(self):
         """
@@ -289,6 +306,7 @@ class Explosion(pg.sprite.Sprite):
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=obj.rect.center)
         self.life = life
+        SE_load("explosion")
 
     def update(self):
         """
@@ -460,6 +478,37 @@ class CharLife:
         screen.blit(self.image, self.rect)
 
 
+class Level:
+    """
+    ゲームのレベルに関するクラス
+    """
+
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 0)
+        self.exp = 0
+        self.lim = 10
+        self.level = 1
+        self.image = self.font.render(f"Level: {self.level}", 0, self.color)
+
+    def exp_up(self, add: int):
+        """
+        経験値,レベルの計算を行う
+        """
+        self.exp += add
+        if self.exp >= self.lim:  # 経験値上限self.limを累積経験値self.expが超えたら
+            self.level += 1  # レベルが一つ上がる
+            self.exp -= self.lim
+            self.lim += random.randint(1, 5)
+
+    def update(self, screen: pg.surface):
+        """
+        レベルの表示の更新を行う
+        """
+        self.image = self.font.render(f"Level: {self.level}", 0, self.color)
+        screen.blit(self.image, (250, 100))
+
+
 def game():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -470,6 +519,7 @@ def game():
         char_life = CharLife(difficulty)
     else:
         char_life = CharLife(1)
+    expe = Level()
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
@@ -482,6 +532,9 @@ def game():
     gras = pg.sprite.Group()
 
     shields = pg.sprite.Group()
+
+    bgm = pg.mixer.Sound("ex05/se/bgm.wav")
+    bgm.play()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -539,6 +592,7 @@ def game():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            expe.exp_up(3)  # 経験値3獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(10 * difficulty)  # 難易度による点数アップ
             else:
@@ -547,6 +601,7 @@ def game():
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            expe.exp_up(1)  # 経験値1獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(1 * difficulty)  # 難易度による点数アップ
             else:
@@ -560,10 +615,32 @@ def game():
                 char_life.life_kill()
                 continue
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-            font = pg.font.Font(None, 100)
-            text = font.render("Game Over!!", 1, (0, 0, 0))  # Game Over!!メッセージ表示
-            score.update(screen)
-            screen.blit(text, (600, 350))
+            """
+            BGMを停止＆GameOverの効果音再生
+            """
+            SE_load(
+                "gameover"
+            )  # SE_load関数で第一引数に何の効果音か(beam,explosion,gameover)を与えてあげると効果音が流れる
+            bgm.stop()  # GameOverになったらBGMを停止する
+            """
+            半透明な黒いrectを表示
+            """
+            image = pg.Surface((1600, 900))
+            r = pg.draw.rect(image, pg.Color(0, 0, 0, 0), pg.Rect(0, 0, 1600, 900))
+            image.set_alpha(200)
+            screen.blit(image, r)
+            """
+            GameOver等の文字の表示
+            """
+            font1 = pg.font.SysFont(
+                "hg正楷書体pro", 150
+            )  # 第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
+            font2 = pg.font.SysFont("hg正楷書体pro", 50)  # 第一引数でフォントの名前を選択し、第2引数でフォントサイズを記述
+            text1 = font1.render("GameOver", True, (255, 0, 0))
+            text2 = font2.render(f"得点は{score.score}点でした", True, (255, 0, 0))
+            screen.blit(text1, (450, 300))  # GameOverと450,300の位置に配置
+            screen.blit(text2, (625, 450))  # scoreを625,450の位置に配置
+
             pg.display.update()
             time.sleep(2)
             return
@@ -621,6 +698,7 @@ def game():
         char_life.update(screen)
 
         score.update(screen)
+        expe.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
