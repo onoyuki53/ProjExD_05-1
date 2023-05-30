@@ -5,11 +5,9 @@ import time
 
 import pygame as pg
 
-
 WIDTH = 1600  # ゲームウィンドウの幅
 HEIGHT = 900  # ゲームウィンドウの高さ
 difficulty = 0  # ゲーム難易度
-pause = False  # ゲーム一時停止
 stop = False  # ゲーム終了
 objects = []  # ボタンリスト
 
@@ -31,10 +29,12 @@ def SE_load(filename):
         pg.mixer.music.play() 
 
 
-class Button():
+
+class Button:
     """
     ボタンを作成するクラス
     """
+
     def __init__(self, x, y, width, height, text, onclick):
         font = pg.font.Font(None, 80)
         self.x = x
@@ -48,7 +48,7 @@ class Button():
         objects.append(self)
 
     def update(self, screen: pg.Surface):
-        mouse = pg.mouse.get_pos()  # マウスのイベント      
+        mouse = pg.mouse.get_pos()  # マウスのイベント
         self.button_img.fill((255, 255, 255))
         if self.button_rct.collidepoint(mouse):
             self.button_img.fill((0, 102, 204))
@@ -57,10 +57,13 @@ class Button():
                 self.button_img.fill((0, 102, 204))
                 self.onclick()
 
-        self.button_img.blit(self.button_txt, [
-            self.button_rct.width/2 - self.button_txt.get_rect().width/2,
-            self.button_rct.height/2 - self.button_txt.get_rect().height/2
-        ])
+        self.button_img.blit(
+            self.button_txt,
+            [
+                self.button_rct.width / 2 - self.button_txt.get_rect().width / 2,
+                self.button_rct.height / 2 - self.button_txt.get_rect().height / 2,
+            ],
+        )
         screen.blit(self.button_img, self.button_rct)
 
 
@@ -69,18 +72,22 @@ def set_difficulty_simple():
     global difficulty
     difficulty = 1
 
+
 def set_difficulty_normal():
     global difficulty
     difficulty = 2
+
 
 def set_difficulty_hard():
     global difficulty
     difficulty = 4
 
+
 def set_difficulty_adventure():
     global difficulty
     difficulty = 6
-    
+
+
 # ゲーム終了
 def set_quit():
     global stop
@@ -161,7 +168,7 @@ class Bird(pg.sprite.Sprite):
         self.image = pg.transform.rotozoom(pg.image.load(f"ex05/fig/{num}.png"), 0, 2.0)
         screen.blit(self.image, self.rect)
 
-    def change_state(self,state: str,hyper_life :int):
+    def change_state(self, state: str, hyper_life: int):
         """
         こうかとんの状態を切り替えるメソッド
         引数1 state :こうかとんの状態(normal or hyper)
@@ -169,7 +176,6 @@ class Bird(pg.sprite.Sprite):
         """
         self.state = state
         self.hyper_life = hyper_life
-
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
         """
@@ -190,8 +196,8 @@ class Bird(pg.sprite.Sprite):
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
-        
-        if self.state =="hyper":
+
+        if self.state == "hyper":
             self.image = pg.transform.laplacian(self.image)
         self.hyper_life -= 1
         if self.hyper_life < 0:
@@ -235,8 +241,8 @@ class Bomb(pg.sprite.Sprite):
         self.vx, self.vy = calc_orientation(emy.rect, bird.rect)
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery + emy.rect.height / 2
-        if difficulty < 5:  # モードによる設定 
-            self.speed = 6*difficulty  # 難易度によるスピード設定
+        if difficulty < 5:  # モードによる設定
+            self.speed = 6 * difficulty  # 難易度によるスピード設定
         else:
             self.speed = 10
 
@@ -345,13 +351,22 @@ class Enemy(pg.sprite.Sprite):
             self.state = "stop"
         self.rect.centery += self.vy
 
+
 class Gravity(pg.sprite.Sprite):
     """
     重力球に関するクラス
     """
-    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
 
-    def __init__(self, bird: Bird, rad: int ,life: int):
+    colors = [
+        (255, 0, 0),
+        (0, 255, 0),
+        (0, 0, 255),
+        (255, 255, 0),
+        (255, 0, 255),
+        (0, 255, 255),
+    ]
+
+    def __init__(self, bird: Bird, rad: int, life: int):
         """
         重力球Surfacewo生成する
         引数1 bird:重力球の中心となるこうかとん
@@ -359,14 +374,14 @@ class Gravity(pg.sprite.Sprite):
         引数3 life:発動時間
         """
         super().__init__()
-        self.image = pg.Surface((2*rad, 2*rad))
-        pg.draw.circle(self.image, (10,10,10), (rad, rad), rad)
+        self.image = pg.Surface((2 * rad, 2 * rad))
+        pg.draw.circle(self.image, (10, 10, 10), (rad, rad), rad)
         self.image.set_alpha(200)
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
-        
+
         self.rect.centerx = bird.rect.centerx
-        self.rect.centery = bird.rect.centery+bird.rect.height/2
+        self.rect.centery = bird.rect.centery + bird.rect.height / 2
         self.life = life
 
     def update(self):
@@ -376,7 +391,6 @@ class Gravity(pg.sprite.Sprite):
         self.life -= 1
         if self.life < 0:
             self.kill()
-
 
 
 class Score:
@@ -454,6 +468,7 @@ def game():
     bgm=pg.mixer.Sound("ex05/se/bgm.wav")
     bgm.play() 
 
+
     tmr = 0
     clock = pg.time.Clock()
     while True:
@@ -465,24 +480,21 @@ def game():
                 beams.add(Beam(bird))
 
             if event.type == pg.KEYDOWN and event.key == pg.K_TAB:
-                if score.score >50:
+                if score.score > 50:
                     score.score_up(-50)
-                    gras.add(Gravity(bird,200,500))
-
+                    gras.add(Gravity(bird, 200, 500))
 
             if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:
                 bird.speed = 20  # 高速化時speed：20
-
 
             if event.type == pg.KEYDOWN and event.key == pg.K_CAPSLOCK:
                 if score.score > 50 and len(shields) == 0:
                     shields.add(Shield(bird, 400))
                     score.score -= 50
 
-
             if event.type == pg.KEYDOWN and event.key == pg.K_RSHIFT:
                 if score.score > 100:
-                    bird.change_state("hyper",500)
+                    bird.change_state("hyper", 500)
                     score.score_up(-100)
 
         screen.blit(bg_img, [0, 0])
@@ -498,42 +510,36 @@ def game():
                     emys.add(Enemy())
             else:
                 if tmr % 200 == 0:
-                    for i in range(tmr//100):
+                    for i in range(tmr // 100):
                         emys.add(Enemy())
 
         for emy in emys:
             if difficulty < 5:  # モードによる設定
-                if emy.state == "stop" and tmr*difficulty % emy.interval == 0:
+                if emy.state == "stop" and tmr * difficulty % emy.interval == 0:
                     # 敵機が停止状態に入ったら，難易度によるintervalに応じて爆弾投下
                     bombs.add(Bomb(emy, bird))
             else:
                 if emy.state == "stop" and tmr % emy.interval == 0:
                     # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
-                    bombs.add(Bomb(emy, bird)) 
-
+                    bombs.add(Bomb(emy, bird))
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             if difficulty < 5:  # モードによる設定
-                score.score_up(10*difficulty)  # 難易度による点数アップ
+                score.score_up(10 * difficulty)  # 難易度による点数アップ
             else:
-                score.score_up(10*(len(emys)+1))  # 敵数による点数アップ
+                score.score_up(10 * (len(emys) + 1))  # 敵数による点数アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             if difficulty < 5:  # モードによる設定
-                score.score_up(1*difficulty)  # 難易度による点数アップ
+                score.score_up(1 * difficulty)  # 難易度による点数アップ
             else:
-                score.score_up(1*(len(bombs)+1))  # 爆弾数による点数アップ
-
+                score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
-            # font = pg.font.Font(None, 100)
-            # text = font.render("Game Over!!", 1, (0, 0, 0)) # Game Over!!メッセージ表示
-            # score.update(screen)
-            # screen.blit(text, (600, 350))
             """
             BGMを停止＆GameOverの効果音再生
             """
@@ -555,30 +561,29 @@ def game():
             text2 = font2.render(f"得点は{score.score}点でした", True, (255,0,0))
             screen.blit(text1, (450,300)) #GameOverと450,300の位置に配置
             screen.blit(text2, (625,450)) #scoreを625,450の位置に配置
+
             pg.display.update()
             time.sleep(2)
             return
-        
+
         for bomb in pg.sprite.groupcollide(bombs, gras, True, False).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             if difficulty < 5:  # モードによる設定
-                score.score_up(1*difficulty)  # 難易度による点数アップ
+                score.score_up(1 * difficulty)  # 難易度による点数アップ
             else:
-                score.score_up(1*(len(bombs)+1))  # 爆弾数による点数アップ
-
+                score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
-
-            if bird.state == "hyper": #hyperモードの時
+            if bird.state == "hyper":  # hyperモードの時
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
                 if difficulty < 5:  # モードによる設定
-                    score.score_up(1*difficulty)  # 難易度による点数アップ
+                    score.score_up(1 * difficulty)  # 難易度による点数アップ
                 else:
-                    score.score_up(1*(len(bombs)+1))  # 爆弾数による点数アップ
-            else: #normalモードの時
-                bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                    score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
+            else:  # normalモードの時
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
                 font = pg.font.Font(None, 100)
-                text = font.render("Game Over!!", 1, (0, 0, 0)) # Game Over!!メッセージ表示
+                text = font.render("Game Over!!", 1, (0, 0, 0))  # Game Over!!メッセージ表示
                 score.update(screen)
                 screen.blit(text, (600, 350))
                 score.update(screen)
@@ -589,10 +594,9 @@ def game():
         for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
             exps.add(Explosion(bomb, 50))
             if difficulty < 5:  # モードによる設定
-                score.score_up(1*difficulty)  # 難易度による点数アップ
+                score.score_up(1 * difficulty)  # 難易度による点数アップ
             else:
-                score.score_up(1*(len(bombs)+1))  # 爆弾数による点数アップ
-
+                score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
 
         bird.update(key_lst, screen)
         beams.update()
@@ -621,16 +625,16 @@ def main():
     global difficulty
 
     # メニューの画像
-    menu_kokaton_1 = pg.transform.rotozoom(pg.image.load(f"ex05/fig/4.png"), 0, 2.5)
-    sub_kokaton = pg.transform.rotozoom(pg.image.load(f"ex05/fig/3.png"), 0, 2.5)
+    menu_kokaton_1 = pg.transform.rotozoom(pg.image.load("ex05/fig/4.png"), 0, 2.5)
+    sub_kokaton = pg.transform.rotozoom(pg.image.load("ex05/fig/3.png"), 0, 2.5)
     menu_kokaton_2 = pg.transform.flip(sub_kokaton, True, False)
     font = pg.font.Font(None, 100)
     title = font.render("Fight!! Kokaton", 1, (0, 0, 0))
 
-    while True: 
+    while True:
         pg.display.set_caption("真！こうかとん無双")
         screen = pg.display.set_mode((WIDTH, HEIGHT))
-        clock  = pg.time.Clock()
+        clock = pg.time.Clock()
         screen.fill((117, 200, 236))
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -643,22 +647,21 @@ def main():
         screen.blit(menu_kokaton_1, [1150, 665])
         screen.blit(menu_kokaton_2, [250, 100])
         # メニューのボタン
-        button_simple = Button(600, 250, 400, 100, 'Easy', set_difficulty_simple)
-        button_normal = Button(600, 350, 400, 100, 'Normal', set_difficulty_normal)
-        button_hard = Button(600, 450, 400, 100, 'Hard', set_difficulty_hard)
-        button_adventure = Button(600, 550, 400, 100, 'Arcade', set_difficulty_adventure)
-        button_quit = Button(600, 700, 400, 100, 'Quit', set_quit)
+        Button(600, 250, 400, 100, "Easy", set_difficulty_simple)
+        Button(600, 350, 400, 100, "Normal", set_difficulty_normal)
+        Button(600, 450, 400, 100, "Hard", set_difficulty_hard)
+        Button(600, 550, 400, 100, "Arcade", set_difficulty_adventure)
+        Button(600, 700, 400, 100, "Quit", set_quit)
         for object in objects:
             object.update(screen)
-
 
         # ゲーム難易度を選択ボタンを押したら、ゲームスタート
         if difficulty >= 1:
             game()
             difficulty = 0
-        
+
         # ゲーム終了ボタンを押したら、ゲーム終了
-        if stop == True:
+        if stop is True:
             return
 
         pg.display.update()
