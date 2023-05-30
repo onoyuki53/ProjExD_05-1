@@ -460,7 +460,7 @@ class CharLife:
         args1:ゲームの難易度
         """
         # フォント設定
-        self.font = pg.font.Font("./ex05//fonts/SourceHanSans-VF.ttf", 40)
+        self.font = pg.font.Font("./ex05/fonts/SourceHanSans-VF.ttf", 40)
         self.color = (0, 0, 255)  # 色設定
         self.level = difficulty  # オブジェクトLEVELに応じた数字(life)
         self.life = "★" * self.level  # self.levelの数だけ★を作成
