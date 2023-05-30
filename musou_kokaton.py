@@ -425,11 +425,51 @@ class Shield(pg.sprite.Sprite):
             self.kill()
 
 
+class CharLife:
+    """
+    キャラクター(こうかとん)の残機数に関するクラス
+    """
+
+    # LEVEL = {
+    #     "初級": 3,
+    #     "中級": 2,
+    #     "上級": 1,
+    # }
+
+    def __init__(self, level: str):
+        """
+        ライフを作成する
+        args1:ゲームの難易度
+        """
+        # フォント設定
+        self.font = pg.font.Font("./ex05//fonts/SourceHanSans-VF.ttf", 40)
+        self.color = (0, 0, 255)  # 色設定
+        self.level = difficulty  # オブジェクトLEVELに応じた数字(life)
+        self.life = "★" * self.level  # self.levelの数だけ★を作成
+        self.image = self.font.render(f"残機:{self.life}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, 100
+
+    def life_kill(self):
+        self.level -= 1
+        self.life = "★" * self.level
+        print(self.life, self.level)
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"残機:{self.life}", 0, self.color)
+        screen.blit(self.image, self.rect)
+
+
 def game():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
+    ## add char_life
+    if difficulty < 5:
+        char_life = CharLife(difficulty)
+    else:
+        char_life = CharLife(1)
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
@@ -513,6 +553,12 @@ def game():
                 score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+            if bird.state == "hyper":
+                score.score_up(1 * difficulty)  # 1点アップ
+                continue
+            if char_life.level > 1:
+                char_life.life_kill()
+                continue
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
             font = pg.font.Font(None, 100)
             text = font.render("Game Over!!", 1, (0, 0, 0))  # Game Over!!メッセージ表示
@@ -532,7 +578,8 @@ def game():
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
             if bird.state == "hyper":  # hyperモードの時
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
-                if difficulty < 5:  # モードによる設定
+                # モードによる設定
+                if difficulty < 5:
                     score.score_up(1 * difficulty)  # 難易度による点数アップ
                 else:
                     score.score_up(1 * (len(bombs) + 1))  # 爆弾数による点数アップ
@@ -569,6 +616,9 @@ def game():
 
         shields.update()
         shields.draw(screen)
+
+        ##add char_life
+        char_life.update(screen)
 
         score.update(screen)
         pg.display.update()
