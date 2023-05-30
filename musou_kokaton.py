@@ -447,11 +447,42 @@ class Shield(pg.sprite.Sprite):
             self.kill()
 
 
+class Level:
+    """
+    ゲームのレベルに関するクラス
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 0)
+        self.exp = 0
+        self.lim = 10
+        self.level = 1
+        self.image = self.font.render(f"Level: {self.level}", 0, self.color)
+        
+    def exp_up(self, add:int):
+        """
+        経験値,レベルの計算を行う
+        """
+        self.exp += add
+        if self.exp >= self.lim: #経験値上限self.limを累積経験値self.expが超えたら
+            self.level += 1      #レベルが一つ上がる
+            self.exp -= self.lim
+            self.lim += random.randint(1, 5)
+
+    def update(self, screen:pg.surface):
+        """
+        レベルの表示の更新を行う
+        """
+        self.image = self.font.render(f"Level: {self.level}", 0, self.color)
+        screen.blit(self.image, (250, 100)) 
+
+
 def game():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("ex05/fig/pg_bg.jpg")
     score = Score()
+    expe = Level()
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
@@ -525,6 +556,7 @@ def game():
 
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            expe.exp_up(3) #経験値3獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(10 * difficulty)  # 難易度による点数アップ
             else:
@@ -533,6 +565,7 @@ def game():
 
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            expe.exp_up(1) #経験値1獲得
             if difficulty < 5:  # モードによる設定
                 score.score_up(1 * difficulty)  # 難易度による点数アップ
             else:
@@ -615,6 +648,7 @@ def game():
         shields.draw(screen)
 
         score.update(screen)
+        expe.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
